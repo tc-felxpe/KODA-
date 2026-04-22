@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%; --foreground: 222.2 84% 4.2%;
+    --primary: 222.2 47.9% 11.2%; --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%; --secondary-foreground: 222.2 47.9% 11.2%;
+    --muted: 210 40% 96.1%; --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%; --accent-foreground: 222.2 47.9% 11.2%;
+    --destructive: 0 84.2% 60.2%; --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%; --input: 214.3 31.8% 91.4%; --ring: 222.2 84% 4.2%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base { * { @apply border-border; } body { @apply bg-background text-foreground; } }
+
+@layer utilities { .text-balance { text-wrap: balance; } }
+
+/* Animación de desplazamiento suave para textos largos */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  15% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-100%);
+  }
+  65% {
+    transform: translateX(-100%);
+  }
+  85% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 6s linear infinite;
+  padding-right: 20px;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+.ProseMirror { @apply outline-none min-h-[1.5em]; }
+.ProseMirror p.is-editor-empty:first-child::before { @apply text-gray-400 float-left h-0 pointer-events-none; content: attr(data-placeholder); }
+.ProseMirror h1 { @apply text-3xl font-bold mb-3; }
+.ProseMirror h2 { @apply text-2xl font-semibold mb-2; }
+.ProseMirror h3 { @apply text-xl font-medium mb-1; }
+.ProseMirror ul, .ProseMirror ol { @apply pl-6 mb-2; }
+.ProseMirror ul { @apply list-disc; }
+.ProseMirror ol { @apply list-decimal; }
+.ProseMirror blockquote { @apply border-l-4 border-gray-300 pl-4 italic text-gray-600 my-2; }
+.ProseMirror pre { @apply bg-gray-100 rounded p-3 font-mono text-sm my-2 overflow-x-auto; }
+.ProseMirror code { @apply bg-gray-100 rounded px-1 py-0.5 font-mono text-sm; }
+.ProseMirror hr { @apply border-t border-gray-200 my-4; }
+.ProseMirror img { @apply max-w-full h-auto rounded-lg; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { @apply bg-transparent; }
+::-webkit-scrollbar-thumb { @apply bg-gray-300 rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-gray-400; }
