@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -35,7 +36,7 @@ export function IconPicker({ isOpen, onClose, onSelect, currentIcon }: IconPicke
     ? POPULAR_ICONS.filter(icon => icon.includes(search.trim()))
     : POPULAR_ICONS;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -51,7 +52,8 @@ export function IconPicker({ isOpen, onClose, onSelect, currentIcon }: IconPicke
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.15 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-sm bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
+            className="fixed z-[100] w-full max-w-sm bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
+            style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
@@ -102,6 +104,7 @@ export function IconPicker({ isOpen, onClose, onSelect, currentIcon }: IconPicke
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

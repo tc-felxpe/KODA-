@@ -6,6 +6,12 @@ import { useAppStore } from '@/stores/appStore';
 import { Button, Input } from '@/components/ui';
 import { Eye, EyeOff, ArrowRight, CheckCircle, Mail, Lock } from 'lucide-react';
 
+const features = [
+  'Organiza tus ideas en un solo lugar',
+  'Crea espacios de trabajo ilimitados',
+  'Accede desde cualquier dispositivo',
+];
+
 export function Auth() {
   const navigate = useNavigate();
   const { setUser } = useAppStore();
@@ -69,18 +75,15 @@ export function Auth() {
             <p className="text-lg text-koda-gray-purple max-w-md leading-relaxed">
               Crea espacios de trabajo, gestiona tareas y colabora con tu equipo en una plataforma diseñada para la productividad.
             </p>
-            <div className="mt-10 flex items-center gap-4">
-              <div className="flex -space-x-3">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="w-10 h-10 rounded-full bg-gradient-to-br from-koda-purple to-koda-purple-light border-2 border-white flex items-center justify-center text-white text-xs font-bold">
-                    {String.fromCharCode(64 + i)}
+            <div className="mt-10 space-y-3">
+              {features.map((feature, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-koda-purple/10 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle className="w-3.5 h-3.5 text-koda-purple" />
                   </div>
-                ))}
-              </div>
-              <div className="text-sm">
-                <p className="font-semibold text-koda-black">+2,000 usuarios</p>
-                <p className="text-koda-gray-light">confían en KODA</p>
-              </div>
+                  <p className="text-sm text-koda-gray-purple">{feature}</p>
+                </div>
+              ))}
             </div>
           </motion.div>
         </div>
@@ -110,14 +113,12 @@ export function Auth() {
                     className="h-20 w-auto"
                   />
                 </div>
-                <div className="mb-6">
+                <div className="mb-6 text-center">
                   <h2 className="text-2xl font-bold text-koda-black">
-                    {isSignUp ? 'Crea tu cuenta' : 'Bienvenido de vuelta'}
+                    {isSignUp ? 'Crear cuenta' : 'Iniciar sesión'}
                   </h2>
                   <p className="mt-1.5 text-sm text-koda-gray-purple">
-                    {isSignUp
-                      ? 'Regístrate para comenzar a organizar tu trabajo'
-                      : 'Ingresa tus credenciales para continuar'}
+                    {isSignUp ? 'Únete a KODA hoy' : 'Bienvenido de nuevo'}
                   </p>
                 </div>
 
@@ -194,7 +195,7 @@ export function Auth() {
           </div>
 
           <p className="mt-6 text-center text-xs text-koda-gray-light">
-            Al continuar, aceptas nuestros términos de servicio y política de privacidad.
+            KODA | © 2026 Todos los derechos reservados. | Realizado por Andrés Felipe Castillo
           </p>
         </motion.div>
       </div>

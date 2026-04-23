@@ -133,4 +133,26 @@ export const db = {
       await Promise.all(updates);
     },
   },
+  comments: {
+    list: async (pageId: string) => {
+      const { data, error } = await from('comments')
+        .select('*')
+        .eq('page_id', pageId)
+        .order('created_at', { ascending: false });
+      if (error) handleError('List comments', error);
+      return (data || []) as any[];
+    },
+    create: async (pageId: string, content: string) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) throw new Error('Usuario no autenticado');
+      return debugRequest<any>('Create comment', () =>
+        from('comments').insert({ page_id: pageId, content, user_id: userId }).select().single()
+      );
+    },
+    delete: async (id: string) => {
+      const { error } = await from('comments').delete().eq('id', id);
+      if (error) handleError('Delete comment', error);
+    },
+  },
 };

@@ -59,3 +59,16 @@ export interface User {
   aud: string;
   created_at: string;
 }
+
+export interface Comment {
+  id: string;
+  page_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  profiles?: {
+    full_name: string | null;
+    email: string | null;
+  } | null;
+}

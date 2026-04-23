@@ -30,7 +30,8 @@ export function WorkspaceView() {
       const workspace = workspaces.find(w => w.id === id);
       if (workspace) setCurrentWorkspace(workspace);
       const pagesData = await db.pages.list(id);
-      setPages(pagesData);
+      const otherPages = pages.filter(p => p.workspace_id !== id);
+      setPages([...otherPages, ...pagesData]);
     } catch (error) {
       console.error('Failed to load workspace:', error);
     } finally {
@@ -58,6 +59,7 @@ export function WorkspaceView() {
   };
 
   const filteredPages = pages.filter(p =>
+    p.workspace_id === workspaceId &&
     p.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragOverlay } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, Sparkles } from 'lucide-react';
 import { BlockEditor } from './BlockEditor';
 import type { Block } from '@/types';
 import { cn } from '@/lib/utils';
@@ -89,7 +89,7 @@ export function SortableBlocks({
         className="text-center py-12"
       >
         <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-koda-purple-ghost flex items-center justify-center">
-          <span className="text-2xl">✨</span>
+          <Sparkles className="w-6 h-6 text-koda-purple" />
         </div>
         <p className="text-sm text-koda-gray-light">Aún no hay bloques</p>
         <p className="text-xs text-koda-gray-purple mt-1">Escribe / para agregar contenido</p>

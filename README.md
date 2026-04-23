@@ -19,11 +19,13 @@ Aplicación React con las siguientes tecnologías:
 - **dnd-kit** para arrastrar y soltar bloques
 - **Zustand** para manejo de estado global
 - **Lucide React** para iconos
+- **Framer Motion** para animaciones
+- **Supabase client** llamado directamente desde el frontend
 
 ### Backend (`/backend`)
 API REST construida con:
 - **Node.js** + **Express** + **TypeScript**
-- Controladores para Workspaces, Páginas y Bloques
+- Controladores para Workspaces, Páginas y Bloques (actualmente no se utiliza; el frontend llama a Supabase directamente)
 
 ### Base de datos (`/supabase`)
 - **Supabase** (PostgreSQL + Autenticación)
@@ -48,6 +50,7 @@ API REST construida con:
 - Editar título de la página en tiempo real (guardado automático)
 - Marcar páginas como favoritas
 - Eliminar páginas
+- Asignar iconos/emojis a las páginas
 - Navegación jerárquica
 
 ### Editor de Bloques
@@ -70,18 +73,21 @@ API REST construida con:
 - **Eliminar** bloques
 - **Guardado automático** con debounce (500ms)
 - **Menú de comandos** con `/` para insertar bloques rápidamente
+- **Panel de comentarios** por página (crear, listar, eliminar)
 
 ### Sidebar
-- Pestañas: Páginas / Favoritos / Recientes
+- Navegación principal: Inicio / Páginas / Favoritos / Recientes
+- Lista de workspaces con búsqueda inline y edición
 - Navegación jerárquica de workspaces y páginas
-- Efecto Marquee para textos largos
 - Crear nuevas páginas desde el sidebar
 - Menú contextual para eliminar workspaces
+- Perfil de usuario en el footer
 
 ### Responsive
 - Diseño adaptable a móviles, tablets y desktop
 - Menú hamburguesa en móvil para acceder al sidebar
 - Toolbars y headers optimizados para pantallas pequeñas
+- Dashboard con tarjetas de estadísticas y actividad reciente
 
 ---
 
@@ -131,7 +137,12 @@ KODA/
 
 ### 1. Supabase
 1. Crea un proyecto en [Supabase](https://supabase.com)
-2. Ejecuta las migraciones en `supabase/migrations/001_initial_schema.sql`
+2. Ejecuta las migraciones SQL en orden dentro del SQL Editor de Supabase:
+   - `001_initial_schema.sql`
+   - `002_fix_auth_trigger.sql`
+   - `003_fix_rls_policies.sql`
+   - `004_fix_trigger_and_rls.sql`
+   - `005_comments.sql`
 3. Copia la URL y la anon key del proyecto
 
 ### 2. Frontend
@@ -172,7 +183,7 @@ El proyecto está en desarrollo activo. Algunas características planificadas:
 - [ ] Búsqueda global
 - [ ] Plantillas de páginas
 - [ ] Compartir páginas
-- [ ] Comentarios
+- [x] Comentarios
 - [ ] Historial de versiones
 - [ ] Exportar a PDF/Markdown
 - [ ] Modo offline

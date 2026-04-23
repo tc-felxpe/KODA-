@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import {
@@ -25,10 +26,9 @@ interface SlashCommandMenuProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (type: BlockType) => void;
-  position: { top: number; left: number };
 }
 
-export function SlashCommandMenu({ isOpen, onClose, onSelect, position }: SlashCommandMenuProps) {
+export function SlashCommandMenu({ isOpen, onClose, onSelect }: SlashCommandMenuProps) {
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -93,23 +93,27 @@ export function SlashCommandMenu({ isOpen, onClose, onSelect, position }: SlashC
 
   if (!isOpen) return null;
 
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const menuStyle = isMobile
-    ? { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
-    : { top: position.top, left: position.left };
-
-  return (
+  return createPortal(
     <AnimatePresence>
-      <motion.div
-        ref={listRef}
-        initial={{ opacity: 0, scale: 0.95, y: 5 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 5 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-        className="fixed z-50 bg-white border border-koda-border-soft rounded-2xl shadow-dropdown max-h-[360px] w-[calc(100vw-2rem)] max-w-[320px] overflow-hidden"
-        style={menuStyle}
-        onKeyDown={handleKeyDown}
-      >
+      <>
+        {/* Backdrop */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
+          onClick={onClose}
+        />
+        <motion.div
+          ref={listRef}
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+          className="fixed z-[100] bg-white border border-koda-border-soft rounded-2xl shadow-dropdown max-h-[360px] w-[calc(100vw-2rem)] max-w-[320px] overflow-hidden"
+          style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+          onKeyDown={handleKeyDown}
+        >
         {/* Header */}
         <div className="p-3 border-b border-koda-border-soft">
           <div className="flex items-center gap-2 px-2">
@@ -184,7 +188,9 @@ export function SlashCommandMenu({ isOpen, onClose, onSelect, position }: SlashC
             <span>Esc Cerrar</span>
           </div>
         </div>
-      </motion.div>
-    </AnimatePresence>
+        </motion.div>
+      </>
+    </AnimatePresence>,
+    document.body
   );
 }

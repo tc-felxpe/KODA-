@@ -36,9 +36,14 @@ export function Dashboard() {
       setWorkspaces(data);
       if (data.length > 0) {
         setCurrentWorkspace(data[0]);
-        const pagesData = await db.pages.list(data[0].id);
-        setPages(pagesData);
       }
+      // Load ALL pages from ALL workspaces
+      const allPages = [];
+      for (const ws of data) {
+        const wsPages = await db.pages.list(ws.id);
+        allPages.push(...wsPages);
+      }
+      setPages(allPages);
     } catch (error) {
       console.error('Failed to load workspaces:', error);
     } finally {

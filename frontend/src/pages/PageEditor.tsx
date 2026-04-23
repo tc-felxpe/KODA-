@@ -8,7 +8,7 @@ import { SortableBlocks } from '@/components/editor/SortableBlock';
 import { SlashCommandMenu } from '@/components/editor/SlashCommandMenu';
 import { IconPicker } from '@/components/editor/IconPicker';
 import { Button, Modal } from '@/components/ui';
-import type { Block, BlockType } from '@/types';
+import type { Block, BlockType, Comment } from '@/types';
 import {
   Plus, ArrowLeft, MoreHorizontal, Star, Trash2,
   Check, Pencil, MessageSquare, X
@@ -18,18 +18,20 @@ import { cn } from '@/lib/utils';
 export function PageEditor() {
   const { pageId } = useParams<{ pageId: string }>();
   const navigate = useNavigate();
-  const { currentPage, setCurrentPage, blocks, setBlocks, setPages, addBlock, updateBlock, removeBlock, reorderBlocks } = useAppStore();
+  const { currentPage, setCurrentPage, blocks, setBlocks, pages, setPages, addBlock, updateBlock, removeBlock, reorderBlocks, user } = useAppStore();
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [slashMenuOpen, setSlashMenuOpen] = useState(false);
-  const [slashMenuPosition, setSlashMenuPosition] = useState({ top: 0, left: 0 });
   const [showCommands, setShowCommands] = useState(false);
   const [localBlocks, setLocalBlocks] = useState<Block[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const titleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const commandsRef = useRef<HTMLDivElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +44,7 @@ export function PageEditor() {
       setCurrentPage(null);
       setBlocks([]);
       setLocalBlocks([]);
+      setComments([]);
     };
   }, [pageId]);
 
@@ -68,6 +71,8 @@ export function PageEditor() {
       const pageBlocks = await db.blocks.list(id);
       setBlocks(pageBlocks);
       setLocalBlocks(pageBlocks);
+      const pageComments = await db.comments.list(id);
+      setComments(pageComments);
     } catch (error) {
       console.error('Failed to load page:', error);
       navigate('/dashboard');
@@ -183,8 +188,7 @@ export function PageEditor() {
       const updated = await db.pages.update(currentPage.id, { is_favorite: !currentPage.is_favorite });
       setCurrentPage(updated);
       setBlocks(blocks);
-      const refreshed = await db.pages.list(currentPage.workspace_id);
-      setPages(refreshed);
+      setPages(pages.map(p => p.id === updated.id ? updated : p));
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
     }
@@ -211,15 +215,33 @@ export function PageEditor() {
     }
   };
 
+  const handleAddComment = async () => {
+    if (!currentPage || !newComment.trim()) return;
+    setIsSubmittingComment(true);
+    try {
+      const comment = await db.comments.create(currentPage.id, newComment.trim());
+      setComments([comment, ...comments]);
+      setNewComment('');
+    } catch (error) {
+      console.error('Failed to add comment:', error);
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!confirm('¿Eliminar este comentario?')) return;
+    try {
+      await db.comments.delete(commentId);
+      setComments(comments.filter(c => c.id !== commentId));
+    } catch (error) {
+      console.error('Failed to delete comment:', error);
+    }
+  };
+
   const handleSlashCommand = (e: React.KeyboardEvent) => {
     if (e.key === '/' && !slashMenuOpen) {
-      const selection = window.getSelection();
-      if (selection) {
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        setSlashMenuPosition({ top: rect.bottom + 8, left: rect.left });
-        setSlashMenuOpen(true);
-      }
+      setSlashMenuOpen(true);
     }
   };
 
@@ -359,6 +381,13 @@ export function PageEditor() {
                   >
                     <MessageSquare className="w-4 h-4" />
                   </button>
+                  <button
+                    onClick={() => setShowIconPicker(true)}
+                    className="p-1.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500"
+                    title="Agregar icono"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
@@ -373,15 +402,87 @@ export function PageEditor() {
                   >
                     <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-sm font-semibold text-gray-700">Comentarios</h4>
+                        <h4 className="text-sm font-semibold text-gray-700">
+                          Comentarios ({comments.length})
+                        </h4>
                         <button onClick={() => setShowComments(false)} className="p-1 hover:bg-gray-200 rounded-md">
                           <X className="w-4 h-4 text-gray-400" />
                         </button>
                       </div>
-                      <div className="text-sm text-gray-400 text-center py-6">
-                        <MessageSquare className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                        <p>Aún no hay comentarios</p>
-                        <p className="text-xs mt-1">Los comentarios estarán disponibles pronto</p>
+
+                      {/* Comment Input */}
+                      <div className="flex gap-2 mb-4">
+                        <input
+                          type="text"
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+                          placeholder="Escribe un comentario..."
+                          className="flex-1 text-sm px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-koda-purple/20 focus:border-koda-purple"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={handleAddComment}
+                          isLoading={isSubmittingComment}
+                          disabled={!newComment.trim()}
+                        >
+                          Enviar
+                        </Button>
+                      </div>
+
+                      {/* Comments List */}
+                      <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                        {comments.length === 0 ? (
+                          <div className="text-sm text-gray-400 text-center py-6">
+                            <MessageSquare className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                            <p>Aún no hay comentarios</p>
+                            <p className="text-xs mt-1">Sé el primero en comentar</p>
+                          </div>
+                        ) : (
+                          comments.map((comment) => {
+                            const isCurrentUser = comment.user_id === user?.id;
+                            const isPageAuthor = comment.user_id === currentPage?.created_by;
+                            const authorName = isCurrentUser ? (user?.email?.split('@')[0] || 'Tú') : (isPageAuthor ? 'Autor' : 'Usuario');
+                            const authorInitials = isCurrentUser ? (user?.email?.slice(0, 2).toUpperCase() || 'TÚ') : (isPageAuthor ? 'AU' : 'US');
+                            return (
+                              <motion.div
+                                key={comment.id}
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex gap-3 group"
+                              >
+                                <div className={cn(
+                                  "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                                  isCurrentUser ? "bg-koda-purple" : "bg-koda-purple-pastel"
+                                )}>
+                                  <span className={cn(
+                                    "text-xs font-bold",
+                                    isCurrentUser ? "text-white" : "text-koda-purple"
+                                  )}>{authorInitials}</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-gray-800">{authorName}</span>
+                                    <span className="text-xs text-gray-400">
+                                      {new Date(comment.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                    {isPageAuthor && (
+                                      <span className="text-[10px] font-medium text-koda-purple bg-koda-purple-ghost px-1.5 py-0.5 rounded-full">Autor</span>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-gray-600 mt-0.5">{comment.content}</p>
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteComment(comment.id)}
+                                  className="p-1.5 rounded-md hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
+                                  title="Eliminar comentario"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </motion.div>
+                            );
+                          })
+                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -417,13 +518,6 @@ export function PageEditor() {
                     {title || 'Sin título'}
                   </h1>
                 )}
-
-                <button
-                  onClick={() => setShowIconPicker(true)}
-                  className="mt-2 text-sm text-[#7B61FF] hover:text-[#6344E3] font-medium flex items-center gap-1 transition-colors"
-                >
-                  <Plus className="w-4 h-4" /> Agregar icono
-                </button>
 
                 {currentPage?.icon && currentPage.icon !== '📄' && (
                   <div className="mt-3 text-2xl">{currentPage.icon}</div>
@@ -462,7 +556,6 @@ export function PageEditor() {
           isOpen={slashMenuOpen}
           onClose={() => setSlashMenuOpen(false)}
           onSelect={handleAddBlock}
-          position={slashMenuPosition}
         />
 
         {/* Delete Confirmation */}
