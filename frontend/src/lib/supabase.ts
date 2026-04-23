@@ -10,13 +10,13 @@ const supabaseAnonKey = rawKey.trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
 
 // DEBUG: Show exact values in browser console (safe preview)
 console.log('[KODA DEBUG] SUPABASE_URL length:', supabaseUrl.length);
-console.log('[KODA DEBUG] SUPABASE_URL chars:', supabaseUrl.split('').map(c => c.charCodeAt(0)));
+console.log('[KODA DEBUG] SUPABASE_URL chars:', supabaseUrl.split('').map((c: string) => c.charCodeAt(0)));
 console.log('[KODA DEBUG] SUPABASE_URL value:', supabaseUrl);
 console.log('[KODA DEBUG] SUPABASE_ANON_KEY length:', supabaseAnonKey.length);
 console.log('[KODA DEBUG] SUPABASE_ANON_KEY first 20 chars:', supabaseAnonKey.slice(0, 20));
 
 // Detect non-ASCII characters
-const nonAsciiInUrl = supabaseUrl.split('').filter((c, i) => {
+const nonAsciiInUrl = supabaseUrl.split('').filter((c: string, i: number) => {
   const code = c.charCodeAt(0);
   if (code > 127) {
     console.log(`[KODA DEBUG] Non-ASCII char in URL at pos ${i}: U+${code.toString(16).toUpperCase().padStart(4, '0')} = "${c}"`);
@@ -25,7 +25,7 @@ const nonAsciiInUrl = supabaseUrl.split('').filter((c, i) => {
   return false;
 });
 
-const nonAsciiInKey = supabaseAnonKey.split('').filter((c, i) => {
+const nonAsciiInKey = supabaseAnonKey.split('').filter((c: string, i: number) => {
   const code = c.charCodeAt(0);
   if (code > 127) {
     console.log(`[KODA DEBUG] Non-ASCII char in KEY at pos ${i}: U+${code.toString(16).toUpperCase().padStart(4, '0')} = "${c}"`);
