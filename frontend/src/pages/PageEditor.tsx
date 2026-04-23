@@ -1,18 +1,24 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/stores/appStore';
 import { db } from '@/lib/api';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { SortableBlocks } from '@/components/editor/SortableBlock';
 import { SlashCommandMenu } from '@/components/editor/SlashCommandMenu';
+import { IconPicker } from '@/components/editor/IconPicker';
+import { Button, Modal } from '@/components/ui';
 import type { Block, BlockType } from '@/types';
-import { Plus, ArrowLeft, MoreHorizontal, Star, Trash2 } from 'lucide-react';
+import {
+  Plus, ArrowLeft, MoreHorizontal, Star, Trash2,
+  Check, Pencil, MessageSquare, X
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function PageEditor() {
   const { pageId } = useParams<{ pageId: string }>();
   const navigate = useNavigate();
-  const { currentPage, setCurrentPage, blocks, setBlocks, addBlock, updateBlock, removeBlock, reorderBlocks } = useAppStore();
+  const { currentPage, setCurrentPage, blocks, setBlocks, setPages, addBlock, updateBlock, removeBlock, reorderBlocks } = useAppStore();
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -20,48 +26,66 @@ export function PageEditor() {
   const [slashMenuPosition, setSlashMenuPosition] = useState({ top: 0, left: 0 });
   const [showCommands, setShowCommands] = useState(false);
   const [localBlocks, setLocalBlocks] = useState<Block[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [showIconPicker, setShowIconPicker] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const titleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const commandsRef = useRef<HTMLDivElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { 
-    if (pageId) loadPage(pageId); 
-    return () => { 
-      setCurrentPage(null); 
-      setBlocks([]); 
+  useEffect(() => {
+    if (pageId) {
+      loadPage(pageId);
+    }
+    return () => {
+      setCurrentPage(null);
+      setBlocks([]);
       setLocalBlocks([]);
-    }; 
+    };
   }, [pageId]);
 
   useEffect(() => {
     setLocalBlocks(blocks);
   }, [blocks]);
 
-  const loadPage = async (id: string) => { 
-    try { 
-      setLoading(true); 
-      const page = await db.pages.get(id); 
-      setCurrentPage(page); 
-      setTitle(page.title || ''); 
-      const pageBlocks = await db.blocks.list(id); 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (commandsRef.current && !commandsRef.current.contains(e.target as Node)) {
+        setShowCommands(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const loadPage = async (id: string) => {
+    try {
+      setLoading(true);
+      const page = await db.pages.get(id);
+      setCurrentPage(page);
+      setTitle(page.title || '');
+      const pageBlocks = await db.blocks.list(id);
       setBlocks(pageBlocks);
       setLocalBlocks(pageBlocks);
-    } catch (error) { 
-      console.error('Failed to load page:', error); 
-      navigate('/dashboard'); 
-    } finally { 
-      setLoading(false); 
-    } 
+    } catch (error) {
+      console.error('Failed to load page:', error);
+      navigate('/dashboard');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const saveTitle = useCallback(async (newTitle: string) => { 
-    if (!currentPage || !newTitle.trim()) return; 
+  const saveTitle = useCallback(async (newTitle: string) => {
+    if (!currentPage || !newTitle.trim()) return;
     setIsSaving(true);
-    try { 
-      const updated = await db.pages.update(currentPage.id, { title: newTitle }); 
-      setCurrentPage(updated); 
-    } catch (error) { 
-      console.error('Failed to save title:', error); 
+    try {
+      const updated = await db.pages.update(currentPage.id, { title: newTitle });
+      setCurrentPage(updated);
+    } catch (error) {
+      console.error('Failed to save title:', error);
     } finally {
-      setIsSaving(false);
+      setTimeout(() => setIsSaving(false), 500);
     }
   }, [currentPage, setCurrentPage]);
 
@@ -71,205 +95,392 @@ export function PageEditor() {
     if (titleTimeoutRef.current) clearTimeout(titleTimeoutRef.current);
     titleTimeoutRef.current = setTimeout(() => {
       if (newTitle.trim()) saveTitle(newTitle);
-    }, 1000);
+    }, 800);
   };
 
-  const handleAddBlock = async (type: BlockType) => { 
-    if (!currentPage) return; 
-    try { 
-      const newBlock = await db.blocks.create({ 
-        page_id: currentPage.id, 
-        type, 
-        content: { text: '' }, 
-        position: localBlocks.length 
-      } as Partial<Block>);
-      const updatedBlocks = [...localBlocks, newBlock];
-      setLocalBlocks(updatedBlocks);
-      addBlock(newBlock);
-    } catch (error) { 
-      console.error('Failed to add block:', error);
-      alert('Error al agregar el bloque');
+  const handleTitleBlur = () => {
+    setIsEditingTitle(false);
+    if (title.trim()) saveTitle(title);
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      setIsEditingTitle(false);
+      if (title.trim()) saveTitle(title);
     }
   };
 
-  const handleUpdateBlock = async (id: string, updates: Partial<Block>) => { 
-    setLocalBlocks(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
-    updateBlock(id, updates); 
-    try { 
-      await db.blocks.update(id, updates); 
-    } catch (error) { 
-      console.error('Failed to update block:', error); 
-    } 
-  };
-
-  const handleDeleteBlock = async (id: string) => { 
-    setLocalBlocks(prev => prev.filter(b => b.id !== id));
-    removeBlock(id); 
-    try { 
-      await db.blocks.delete(id); 
-    } catch (error) { 
-      console.error('Failed to delete block:', error); 
-      const pageBlocks = await db.blocks.list(pageId!);
-      setLocalBlocks(pageBlocks);
-      setBlocks(pageBlocks);
-    } 
-  };
-
-  const handleDuplicateBlock = async (block: Block) => { 
-    try { 
-      const newBlock = await db.blocks.create({ 
-        page_id: block.page_id, 
-        type: block.type, 
-        content: block.content, 
-        properties: block.properties, 
-        position: block.position + 1 
+  const handleAddBlock = async (type: BlockType) => {
+    if (!currentPage) return;
+    try {
+      const newBlock = await db.blocks.create({
+        page_id: currentPage.id,
+        type,
+        content: { text: '' },
+        position: localBlocks.length
       } as Partial<Block>);
       const updatedBlocks = [...localBlocks, newBlock];
       setLocalBlocks(updatedBlocks);
       addBlock(newBlock);
-    } catch (error) { 
-      console.error('Failed to duplicate block:', error); 
-    } 
+    } catch (error) {
+      console.error('Failed to add block:', error);
+    }
   };
 
-  const handleReorderBlocks = async (reorderedBlocks: Block[]) => { 
+  const handleUpdateBlock = async (id: string, updates: Partial<Block>) => {
+    setLocalBlocks(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
+    updateBlock(id, updates);
+    try {
+      await db.blocks.update(id, updates);
+    } catch (error) {
+      console.error('Failed to update block:', error);
+    }
+  };
+
+  const handleDeleteBlock = async (id: string) => {
+    setLocalBlocks(prev => prev.filter(b => b.id !== id));
+    removeBlock(id);
+    try {
+      await db.blocks.delete(id);
+    } catch (error) {
+      console.error('Failed to delete block:', error);
+      const pageBlocks = await db.blocks.list(pageId!);
+      setLocalBlocks(pageBlocks);
+      setBlocks(pageBlocks);
+    }
+  };
+
+  const handleDuplicateBlock = async (block: Block) => {
+    try {
+      const newBlock = await db.blocks.create({
+        page_id: block.page_id,
+        type: block.type,
+        content: block.content,
+        properties: block.properties,
+        position: block.position + 1
+      } as Partial<Block>);
+      const updatedBlocks = [...localBlocks, newBlock];
+      setLocalBlocks(updatedBlocks);
+      addBlock(newBlock);
+    } catch (error) {
+      console.error('Failed to duplicate block:', error);
+    }
+  };
+
+  const handleReorderBlocks = async (reorderedBlocks: Block[]) => {
     setLocalBlocks(reorderedBlocks);
-    reorderBlocks(reorderedBlocks); 
-    try { 
-      await db.blocks.reorder(currentPage!.id, reorderedBlocks.map((b) => b.id)); 
-    } catch (error) { 
-      console.error('Failed to reorder blocks:', error); 
-    } 
+    reorderBlocks(reorderedBlocks);
+    try {
+      await db.blocks.reorder(currentPage!.id, reorderedBlocks.map((b) => b.id));
+    } catch (error) {
+      console.error('Failed to reorder blocks:', error);
+    }
   };
 
-  const handleToggleFavorite = async () => { 
-    if (!currentPage) return; 
-    try { 
-      const updated = await db.pages.update(currentPage.id, { is_favorite: !currentPage.is_favorite }); 
-      setCurrentPage(updated); 
-    } catch (error) { 
-      console.error('Failed to toggle favorite:', error); 
-    } 
+  const handleToggleFavorite = async () => {
+    if (!currentPage) return;
+    try {
+      const updated = await db.pages.update(currentPage.id, { is_favorite: !currentPage.is_favorite });
+      setCurrentPage(updated);
+      setBlocks(blocks);
+      const refreshed = await db.pages.list(currentPage.workspace_id);
+      setPages(refreshed);
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+    }
   };
 
-  const handleDeletePage = async () => { 
-    if (!currentPage) return; 
-    if (!confirm('¿Estás seguro de que quieres eliminar esta página?')) return;
-    try { 
-      await db.pages.delete(currentPage.id); 
-      navigate('/dashboard'); 
-    } catch (error) { 
-      console.error('Failed to delete page:', error); 
-    } 
+  const handleDeletePage = async () => {
+    if (!currentPage) return;
+    try {
+      await db.pages.delete(currentPage.id);
+      setShowDeleteConfirm(false);
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Failed to delete page:', error);
+    }
   };
 
-  const handleSlashCommand = (e: React.KeyboardEvent) => { 
-    if (e.key === '/' && !slashMenuOpen) { 
-      const selection = window.getSelection(); 
-      if (selection) { 
-        const range = selection.getRangeAt(0); 
-        const rect = range.getBoundingClientRect(); 
-        setSlashMenuPosition({ top: rect.bottom + 8, left: rect.left }); 
-        setSlashMenuOpen(true); 
-      } 
-    } 
+  const handleUpdateIcon = async (icon: string) => {
+    if (!currentPage) return;
+    try {
+      const updated = await db.pages.update(currentPage.id, { icon });
+      setCurrentPage(updated);
+    } catch (error) {
+      console.error('Failed to update icon:', error);
+    }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><div className="text-gray-500">Cargando...</div></div>;
+  const handleSlashCommand = (e: React.KeyboardEvent) => {
+    if (e.key === '/' && !slashMenuOpen) {
+      const selection = window.getSelection();
+      if (selection) {
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        setSlashMenuPosition({ top: rect.bottom + 8, left: rect.left });
+        setSlashMenuOpen(true);
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex bg-[#F8F7FC]">
+        <Sidebar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-2 border-koda-purple border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-koda-gray-light">Cargando página...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex bg-white">
+    <div className="min-h-screen flex bg-[#F8F7FC]">
       <Sidebar />
+
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 border-b border-gray-200 flex items-center justify-between px-3 md:px-4 pl-14 md:pl-4">
-          <div className="flex items-center gap-2 md:gap-4 min-w-0">
-            <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-gray-100 rounded-md flex-shrink-0">
-              <ArrowLeft className="w-5 h-5 text-gray-500" />
-            </button>
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-lg flex-shrink-0">{currentPage?.icon || '📄'}</span>
-              <span className="text-sm font-medium text-gray-700 truncate max-w-[120px] sm:max-w-[200px] md:max-w-[300px]">
-                {title || 'Sin título'}
-              </span>
-              <span className="text-xs text-gray-400 flex-shrink-0 hidden sm:inline">
-                {isSaving ? 'Guardando...' : ''}
-              </span>
+        {/* Top Header */}
+        <header className="sticky top-0 z-30 bg-white border-b border-gray-100">
+          <div className="h-14 md:h-16 flex items-center justify-between px-4 md:px-6">
+            {/* Left: Back + Title status */}
+            <div className="flex items-center gap-3 min-w-0">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-500" />
+              </button>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span className="text-sm font-medium text-gray-800 truncate max-w-[200px] md:max-w-md">
+                    {title || 'Sin título'}
+                  </span>
+                </div>
+                <p className="text-xs text-emerald-500 font-medium ml-6">Guardado</p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
-            <button 
-              onClick={handleToggleFavorite} 
-              className={cn('p-2 rounded-md', currentPage?.is_favorite ? 'text-yellow-500 bg-yellow-50' : 'hover:bg-gray-100')}
-            >
-              <Star className="w-5 h-5" fill={currentPage?.is_favorite ? 'currentColor' : 'none'} />
-            </button>
-            <button 
-              onClick={() => setShowCommands(!showCommands)} 
-              className="p-2 hover:bg-gray-100 rounded-md"
-            >
-              <MoreHorizontal className="w-5 h-5 text-gray-500" />
-            </button>
-            <button 
-              onClick={() => handleAddBlock('paragraph')} 
-              className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white rounded-md hover:bg-gray-800"
-            >
-              <Plus className="w-4 h-4" />Agregar bloque
-            </button>
+
+            {/* Right: Actions */}
+            <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={handleToggleFavorite}
+                className={cn(
+                  'p-2 rounded-lg transition-colors',
+                  currentPage?.is_favorite
+                    ? 'text-koda-purple bg-koda-purple-ghost'
+                    : 'text-gray-400 hover:text-koda-purple hover:bg-koda-purple-ghost'
+                )}
+              >
+                <Star className="w-5 h-5" fill={currentPage?.is_favorite ? 'currentColor' : 'none'} />
+              </motion.button>
+
+              <div className="relative" ref={commandsRef}>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowCommands(!showCommands)}
+                  className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <MoreHorizontal className="w-5 h-5" />
+                </motion.button>
+
+                <AnimatePresence>
+                  {showCommands && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-2 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 min-w-[180px] z-40"
+                    >
+                      <button
+                        onClick={() => { handleToggleFavorite(); setShowCommands(false); }}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-koda-purple-ghost flex items-center gap-2.5 transition-colors"
+                      >
+                        <Star className="w-4 h-4 text-koda-purple" />
+                        {currentPage?.is_favorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                      </button>
+                      <div className="mx-3 my-1 border-t border-gray-100" />
+                      <button
+                        onClick={() => { setShowDeleteConfirm(true); setShowCommands(false); }}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 flex items-center gap-2.5 text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />Eliminar página
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus className="w-4 h-4" />}
+                onClick={() => handleAddBlock('paragraph')}
+                className="hidden md:flex rounded-lg"
+              >
+                Bloque
+              </Button>
+            </div>
           </div>
         </header>
+
+        {/* Editor Content */}
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto py-6 md:py-8 px-4 md:px-4">
-            <div className="mb-6 md:mb-8">
-              <input 
-                value={title}
-                onChange={handleTitleChange}
-                className="w-full text-2xl sm:text-3xl md:text-4xl font-bold bg-transparent outline-none border-b-2 border-transparent hover:border-gray-200 focus:border-gray-900 transition-colors placeholder-gray-300"
-                placeholder="Escribe el título de la página..."
-              />
-            </div>
-            
-            <div onKeyDown={handleSlashCommand} className="min-h-[300px] md:min-h-[500px]">
-              <SortableBlocks 
-                blocks={localBlocks} 
-                onUpdate={handleUpdateBlock} 
-                onDelete={handleDeleteBlock} 
-                onDuplicate={handleDuplicateBlock} 
-                onReorder={handleReorderBlocks} 
-              />
-            </div>
-            <div className="mt-6 md:mt-8 pt-4 border-t border-gray-100">
-              <button 
-                onClick={() => handleAddBlock('paragraph')} 
-                className="flex items-center gap-2 text-gray-400 hover:text-gray-600 text-sm"
-              >
-                <Plus className="w-4 h-4" />Agregar un bloque
-              </button>
-            </div>
+          <div className="max-w-4xl mx-auto p-4 md:p-8">
+            {/* Main Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+            >
+              {/* Card Header Actions */}
+              <div className="flex justify-end p-4 pb-0">
+                <div className="flex items-center gap-0.5 border border-gray-200 rounded-lg p-1">
+                  <button
+                    onClick={() => { setIsEditingTitle(true); setTimeout(() => titleInputRef.current?.focus(), 50); }}
+                    className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
+                    title="Editar título"
+                  >
+                    <Pencil className="w-4 h-4 text-gray-500" />
+                  </button>
+                  <button
+                    onClick={() => setShowComments(!showComments)}
+                    className={cn(
+                      'p-1.5 rounded-md transition-colors',
+                      showComments ? 'bg-koda-purple-ghost text-koda-purple' : 'hover:bg-gray-100 text-gray-500'
+                    )}
+                    title="Comentarios"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Comments Panel */}
+              <AnimatePresence>
+                {showComments && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mx-4 mb-2 overflow-hidden"
+                  >
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-semibold text-gray-700">Comentarios</h4>
+                        <button onClick={() => setShowComments(false)} className="p-1 hover:bg-gray-200 rounded-md">
+                          <X className="w-4 h-4 text-gray-400" />
+                        </button>
+                      </div>
+                      <div className="text-sm text-gray-400 text-center py-6">
+                        <MessageSquare className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                        <p>Aún no hay comentarios</p>
+                        <p className="text-xs mt-1">Los comentarios estarán disponibles pronto</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Page Icon & Title */}
+              <div className="px-8 pt-2 pb-4">
+                <div className="w-16 h-16 rounded-2xl bg-[#EDE8FF] flex items-center justify-center mb-4">
+                  <img
+                    src="/img/LOGO-KODA-PNG.png"
+                    alt="KODA"
+                    className="w-10 h-10 object-contain"
+                  />
+                </div>
+
+                {isEditingTitle ? (
+                  <input
+                    ref={titleInputRef}
+                    value={title}
+                    onChange={handleTitleChange}
+                    onBlur={handleTitleBlur}
+                    onKeyDown={handleTitleKeyDown}
+                    autoFocus
+                    className="w-full text-3xl md:text-4xl font-bold text-gray-900 tracking-tight bg-transparent outline-none placeholder-gray-300"
+                    placeholder="Título de la página..."
+                  />
+                ) : (
+                  <h1
+                    onClick={() => setIsEditingTitle(true)}
+                    className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight cursor-text hover:bg-gray-50 rounded-lg px-2 -mx-2 py-1 transition-colors"
+                  >
+                    {title || 'Sin título'}
+                  </h1>
+                )}
+
+                <button
+                  onClick={() => setShowIconPicker(true)}
+                  className="mt-2 text-sm text-[#7B61FF] hover:text-[#6344E3] font-medium flex items-center gap-1 transition-colors"
+                >
+                  <Plus className="w-4 h-4" /> Agregar icono
+                </button>
+
+                {currentPage?.icon && currentPage.icon !== '📄' && (
+                  <div className="mt-3 text-2xl">{currentPage.icon}</div>
+                )}
+              </div>
+
+              {/* Blocks Area */}
+              <div className="bg-[#F8F7FC] mx-4 mb-4 rounded-xl p-6 min-h-[300px]" onKeyDown={handleSlashCommand}>
+                <SortableBlocks
+                  blocks={localBlocks}
+                  onUpdate={handleUpdateBlock}
+                  onDelete={handleDeleteBlock}
+                  onDuplicate={handleDuplicateBlock}
+                  onReorder={handleReorderBlocks}
+                />
+              </div>
+
+              {/* Bottom Hint */}
+              <div className="px-8 pb-6 text-center">
+                <span className="text-sm text-gray-400">Escribe "/" para ver los comandos</span>
+              </div>
+            </motion.div>
           </div>
         </div>
-        <SlashCommandMenu 
-          isOpen={slashMenuOpen} 
-          onClose={() => setSlashMenuOpen(false)} 
-          onSelect={handleAddBlock} 
-          position={slashMenuPosition} 
+
+        {/* Icon Picker */}
+        <IconPicker
+          isOpen={showIconPicker}
+          onClose={() => setShowIconPicker(false)}
+          onSelect={handleUpdateIcon}
+          currentIcon={currentPage?.icon}
         />
-        {showCommands && (
-          <div className="absolute right-2 md:right-4 top-14 bg-white border rounded-lg shadow-lg py-2 z-40">
-            <button 
-              onClick={handleToggleFavorite} 
-              className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
-            >
-              <Star className="w-4 h-4" />
-              {currentPage?.is_favorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-            </button>
-            <button 
-              onClick={handleDeletePage} 
-              className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-red-500"
-            >
-              <Trash2 className="w-4 h-4" />Eliminar página
-            </button>
+
+        {/* Slash Command Menu */}
+        <SlashCommandMenu
+          isOpen={slashMenuOpen}
+          onClose={() => setSlashMenuOpen(false)}
+          onSelect={handleAddBlock}
+          position={slashMenuPosition}
+        />
+
+        {/* Delete Confirmation */}
+        <Modal
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          title="Eliminar página"
+          description="Esta acción no se puede deshacer. ¿Estás seguro?"
+        >
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="ghost" onClick={() => setShowDeleteConfirm(false)}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={handleDeletePage}>
+              Eliminar página
+            </Button>
           </div>
-        )}
+        </Modal>
       </main>
     </div>
   );

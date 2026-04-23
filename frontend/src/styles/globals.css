@@ -1,70 +1,202 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%; --foreground: 222.2 84% 4.2%;
-    --primary: 222.2 47.9% 11.2%; --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%; --secondary-foreground: 222.2 47.9% 11.2%;
-    --muted: 210 40% 96.1%; --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%; --accent-foreground: 222.2 47.9% 11.2%;
-    --destructive: 0 84.2% 60.2%; --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%; --input: 214.3 31.8% 91.4%; --ring: 222.2 84% 4.2%;
-    --radius: 0.5rem;
+    --koda-purple: #7B61FF;
+    --koda-purple-hover: #6344E3;
+    --koda-purple-dark: #4F2EE3;
+    --koda-purple-light: #CABEFF;
+    --koda-purple-pastel: #EDE8FF;
+    --koda-purple-ghost: #F8F6FF;
+    --koda-black: #0A0A0A;
+    --koda-black-soft: #1E1B2E;
+    --koda-gray-purple: #6B667C;
+    --koda-gray-light: #A19FB0;
+    --koda-background: #FAF9FE;
+    --koda-hover: #F0EDFF;
+    --koda-border: #E2DDF5;
+    --koda-border-soft: #F0EEF8;
+    --koda-error: #FF4D6D;
+    --koda-warning: #FFB800;
+  }
+
+  * {
+    @apply border-koda-border-soft;
+  }
+
+  html {
+    @apply antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-koda-background text-koda-black font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: var(--koda-purple-pastel);
+    color: var(--koda-purple-dark);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #D4CFF5;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #B8B0F0;
+  }
+
+  /* Focus visible styles */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-koda-purple/40 ring-offset-2 ring-offset-koda-background;
   }
 }
 
-@layer base { * { @apply border-border; } body { @apply bg-background text-foreground; } }
+@layer components {
+  /* KODA Button Base */
+  .koda-btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ease-smooth select-none;
+  }
+  .koda-btn:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  .koda-btn-primary {
+    @apply koda-btn bg-koda-purple text-white shadow-soft hover:bg-koda-purple-hover hover:shadow-glow-sm active:scale-[0.98];
+  }
+  .koda-btn-secondary {
+    @apply koda-btn bg-koda-purple-ghost text-koda-purple hover:bg-koda-purple-pastel active:scale-[0.98];
+  }
+  .koda-btn-ghost {
+    @apply koda-btn bg-transparent text-koda-gray-purple hover:bg-koda-hover hover:text-koda-black-soft;
+  }
+  .koda-btn-danger {
+    @apply koda-btn bg-red-50 text-koda-error hover:bg-red-100 active:scale-[0.98];
+  }
 
-@layer utilities { .text-balance { text-wrap: balance; } }
+  /* KODA Card */
+  .koda-card {
+    @apply bg-white rounded-xl border border-koda-border-soft shadow-card transition-all duration-300 ease-smooth;
+  }
+  .koda-card-hover {
+    @apply koda-card hover:shadow-card-hover hover:-translate-y-0.5 hover:border-koda-border;
+  }
 
-/* Animación de desplazamiento suave para textos largos */
-@keyframes marquee {
-  0% {
-    transform: translateX(0);
+  /* KODA Input */
+  .koda-input {
+    @apply w-full px-4 py-2.5 bg-white border border-koda-border rounded-lg text-sm text-koda-black placeholder-koda-gray-light transition-all duration-200 ease-smooth;
+    @apply focus:border-koda-purple focus:ring-2 focus:ring-koda-purple/20 focus:outline-none;
+    @apply hover:border-koda-purple-light;
   }
-  15% {
-    transform: translateX(0);
+
+  /* KODA Badge */
+  .koda-badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
-  50% {
-    transform: translateX(-100%);
+  .koda-badge-purple {
+    @apply koda-badge bg-koda-purple-pastel text-koda-purple-dark;
   }
-  65% {
-    transform: translateX(-100%);
+
+  /* KODA Menu Item */
+  .koda-menu-item {
+    @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-koda-gray-purple transition-all duration-150 ease-smooth cursor-pointer;
+    @apply hover:bg-koda-hover hover:text-koda-black-soft;
   }
-  85% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(0);
+  .koda-menu-item.active {
+    @apply bg-koda-purple-ghost text-koda-purple font-medium;
   }
 }
 
-.animate-marquee {
-  animation: marquee 6s linear infinite;
-  padding-right: 20px;
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .gradient-purple {
+    background: linear-gradient(135deg, #7B61FF 0%, #9B87FF 50%, #CABEFF 100%);
+  }
+  .gradient-purple-subtle {
+    background: linear-gradient(180deg, #F8F6FF 0%, #FAF9FE 100%);
+  }
 }
 
-.animate-marquee:hover {
-  animation-play-state: paused;
+/* ProseMirror / TipTap Styles */
+.ProseMirror {
+  @apply outline-none min-h-[1.5em] text-koda-black;
+}
+.ProseMirror p.is-editor-empty:first-child::before {
+  @apply text-koda-gray-light float-left h-0 pointer-events-none;
+  content: attr(data-placeholder);
+}
+.ProseMirror h1 {
+  @apply text-3xl font-bold mb-3 text-koda-black tracking-tight;
+}
+.ProseMirror h2 {
+  @apply text-2xl font-semibold mb-2 text-koda-black tracking-tight;
+}
+.ProseMirror h3 {
+  @apply text-xl font-medium mb-1 text-koda-black tracking-tight;
+}
+.ProseMirror ul,
+.ProseMirror ol {
+  @apply pl-6 mb-2;
+}
+.ProseMirror ul {
+  @apply list-disc;
+}
+.ProseMirror ol {
+  @apply list-decimal;
+}
+.ProseMirror blockquote {
+  @apply border-l-4 border-koda-purple-light pl-4 italic text-koda-gray-purple my-2;
+}
+.ProseMirror pre {
+  @apply bg-koda-black-soft rounded-lg p-4 font-mono text-sm my-2 overflow-x-auto text-koda-purple-light;
+}
+.ProseMirror code {
+  @apply bg-koda-purple-ghost rounded-md px-1.5 py-0.5 font-mono text-sm text-koda-purple-dark;
+}
+.ProseMirror hr {
+  @apply border-t border-koda-border my-4;
+}
+.ProseMirror img {
+  @apply max-w-full h-auto rounded-xl;
+}
+.ProseMirror a {
+  @apply text-koda-purple hover:text-koda-purple-hover underline underline-offset-2;
+}
+.ProseMirror strong {
+  @apply font-semibold text-koda-black;
+}
+.ProseMirror em {
+  @apply italic;
 }
 
-.ProseMirror { @apply outline-none min-h-[1.5em]; }
-.ProseMirror p.is-editor-empty:first-child::before { @apply text-gray-400 float-left h-0 pointer-events-none; content: attr(data-placeholder); }
-.ProseMirror h1 { @apply text-3xl font-bold mb-3; }
-.ProseMirror h2 { @apply text-2xl font-semibold mb-2; }
-.ProseMirror h3 { @apply text-xl font-medium mb-1; }
-.ProseMirror ul, .ProseMirror ol { @apply pl-6 mb-2; }
-.ProseMirror ul { @apply list-disc; }
-.ProseMirror ol { @apply list-decimal; }
-.ProseMirror blockquote { @apply border-l-4 border-gray-300 pl-4 italic text-gray-600 my-2; }
-.ProseMirror pre { @apply bg-gray-100 rounded p-3 font-mono text-sm my-2 overflow-x-auto; }
-.ProseMirror code { @apply bg-gray-100 rounded px-1 py-0.5 font-mono text-sm; }
-.ProseMirror hr { @apply border-t border-gray-200 my-4; }
-.ProseMirror img { @apply max-w-full h-auto rounded-lg; }
+/* Animations for Framer Motion fallback */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+.animate-fade-up {
+  animation: fadeUp 0.4s ease-out forwards;
+}
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { @apply bg-transparent; }
-::-webkit-scrollbar-thumb { @apply bg-gray-300 rounded-full; }
-::-webkit-scrollbar-thumb:hover { @apply bg-gray-400; }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}

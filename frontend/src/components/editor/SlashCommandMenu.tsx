@@ -1,35 +1,25 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Type, Heading1, Heading2, Heading3, List, ListOrdered, CheckSquare, Quote, Code, Minus } from 'lucide-react';
+import {
+  Type, Heading1, Heading2, Heading3, List, ListOrdered,
+  CheckSquare, Quote, Code, Minus, Sparkles
+} from 'lucide-react';
 import type { BlockType } from '@/types';
 import type { LucideIcon } from 'lucide-react';
 
 const blockTypes = [
-  { type: 'paragraph', label: 'Texto', icon: 'Type', description: 'Empieza a escribir con texto plano.' },
-  { type: 'heading-1', label: 'Encabezado 1', icon: 'Heading1', description: 'Encabezado grande de sección.' },
-  { type: 'heading-2', label: 'Encabezado 2', icon: 'Heading2', description: 'Encabezado mediano de sección.' },
-  { type: 'heading-3', label: 'Encabezado 3', icon: 'Heading3', description: 'Encabezado pequeño de sección.' },
-  { type: 'bullet-list', label: 'Lista con viñetas', icon: 'List', description: 'Crea una lista simple con viñetas.' },
-  { type: 'numbered-list', label: 'Lista numerada', icon: 'ListOrdered', description: 'Crea una lista con numeración.' },
-  { type: 'checklist', label: 'Lista de tareas', icon: 'CheckSquare', description: 'Organiza tareas con una lista de pendientes.' },
-  { type: 'quote', label: 'Cita', icon: 'Quote', description: 'Captura una cita.' },
-  { type: 'code', label: 'Código', icon: 'Code', description: 'Captura un fragmento de código.' },
-  { type: 'divider', label: 'Divisor', icon: 'Minus', description: 'Divide visualmente los bloques.' },
+  { type: 'paragraph', label: 'Texto', icon: Type, description: 'Empieza a escribir con texto plano.', color: 'bg-koda-purple-pastel text-koda-purple' },
+  { type: 'heading-1', label: 'Encabezado 1', icon: Heading1, description: 'Encabezado grande de sección.', color: 'bg-blue-50 text-blue-500' },
+  { type: 'heading-2', label: 'Encabezado 2', icon: Heading2, description: 'Encabezado mediano de sección.', color: 'bg-emerald-50 text-emerald-500' },
+  { type: 'heading-3', label: 'Encabezado 3', icon: Heading3, description: 'Encabezado pequeño de sección.', color: 'bg-amber-50 text-amber-500' },
+  { type: 'bullet-list', label: 'Lista con viñetas', icon: List, description: 'Crea una lista simple con viñetas.', color: 'bg-rose-50 text-rose-500' },
+  { type: 'numbered-list', label: 'Lista numerada', icon: ListOrdered, description: 'Crea una lista con numeración.', color: 'bg-cyan-50 text-cyan-500' },
+  { type: 'checklist', label: 'Lista de tareas', icon: CheckSquare, description: 'Organiza tareas con checkboxes.', color: 'bg-green-50 text-green-500' },
+  { type: 'quote', label: 'Cita', icon: Quote, description: 'Captura una cita importante.', color: 'bg-orange-50 text-orange-500' },
+  { type: 'code', label: 'Código', icon: Code, description: 'Fragmento de código con sintaxis.', color: 'bg-slate-100 text-slate-600' },
+  { type: 'divider', label: 'Divisor', icon: Minus, description: 'Separa visualmente los bloques.', color: 'bg-gray-100 text-gray-500' },
 ] as const;
-
-const iconMap: Record<string, LucideIcon> = {
-  Type,
-  Heading1,
-  Heading2,
-  Heading3,
-  List,
-  ListOrdered,
-  CheckSquare,
-  Quote,
-  Code,
-  Minus,
-};
 
 interface SlashCommandMenuProps {
   isOpen: boolean;
@@ -44,13 +34,10 @@ export function SlashCommandMenu({ isOpen, onClose, onSelect, position }: SlashC
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const filteredBlocks = blockTypes.filter((b) => b.label.toLowerCase().includes(search.toLowerCase()));
-  const rowVirtualizer = useVirtualizer({
-    count: filteredBlocks.length,
-    getScrollElement: () => listRef.current,
-    estimateSize: () => 44,
-    overscan: 5,
-  });
+  const filteredBlocks = blockTypes.filter((b) =>
+    b.label.toLowerCase().includes(search.toLowerCase()) ||
+    b.description.toLowerCase().includes(search.toLowerCase())
+  );
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
@@ -94,67 +81,110 @@ export function SlashCommandMenu({ isOpen, onClose, onSelect, position }: SlashC
         onClose();
       }
     };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onClose]);
 
+  // Auto-scroll to selected item
+  useEffect(() => {
+    const selectedEl = listRef.current?.querySelector(`[data-index="${selectedIndex}"]`);
+    selectedEl?.scrollIntoView({ block: 'nearest' });
+  }, [selectedIndex]);
+
   if (!isOpen) return null;
 
-  // Responsive positioning: on mobile, center the menu
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const menuStyle = isMobile 
+  const menuStyle = isMobile
     ? { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
     : { top: position.top, left: position.left };
 
   return (
-    <div
-      ref={listRef}
-      className="fixed z-50 bg-white border rounded-lg shadow-xl max-h-[300px] w-[280px] overflow-hidden"
-      style={menuStyle}
-      onKeyDown={handleKeyDown}
-    >
-      <div className="p-2 border-b">
-        <input
-          ref={inputRef}
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar bloques..."
-          className="w-full px-2 py-1 text-sm outline-none"
-        />
-      </div>
-      <div className="overflow-y-auto max-h-[220px]">
-        {filteredBlocks.length === 0 ? (
-          <div className="p-3 text-sm text-gray-400 text-center">No se encontraron bloques</div>
-        ) : (
-          <div className="py-1">
-            {filteredBlocks.map((block, index) => {
-              const Icon = iconMap[block.icon];
-              return (
-                <button
-                  key={block.type}
-                  onClick={() => {
-                    onSelect(block.type);
-                    onClose();
-                  }}
-                  className={cn(
-                    'w-full px-3 py-2 text-left flex items-center gap-3 hover:bg-gray-100',
-                    index === selectedIndex && 'bg-gray-100'
-                  )}
-                >
-                  {Icon && <Icon className="w-5 h-5 text-gray-500 flex-shrink-0" />}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium">{block.label}</div>
-                    <div className="text-xs text-gray-400 truncate">{block.description}</div>
-                  </div>
-                </button>
-              );
-            })}
+    <AnimatePresence>
+      <motion.div
+        ref={listRef}
+        initial={{ opacity: 0, scale: 0.95, y: 5 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 5 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+        className="fixed z-50 bg-white border border-koda-border-soft rounded-2xl shadow-dropdown max-h-[360px] w-[calc(100vw-2rem)] max-w-[320px] overflow-hidden"
+        style={menuStyle}
+        onKeyDown={handleKeyDown}
+      >
+        {/* Header */}
+        <div className="p-3 border-b border-koda-border-soft">
+          <div className="flex items-center gap-2 px-2">
+            <Sparkles className="w-4 h-4 text-koda-purple" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar bloques..."
+              className="flex-1 text-sm outline-none text-koda-black placeholder-koda-gray-light bg-transparent"
+            />
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+
+        {/* List */}
+        <div className="overflow-y-auto max-h-[280px] p-1.5">
+          {filteredBlocks.length === 0 ? (
+            <div className="p-6 text-center">
+              <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-koda-purple-ghost flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-koda-purple-light" />
+              </div>
+              <p className="text-sm text-koda-gray-purple">No se encontraron bloques</p>
+              <p className="text-xs text-koda-gray-light mt-0.5">Intenta con otra búsqueda</p>
+            </div>
+          ) : (
+            <div className="space-y-0.5">
+              {filteredBlocks.map((block, index) => {
+                const Icon = block.icon;
+                const isSelected = index === selectedIndex;
+                return (
+                  <motion.button
+                    key={block.type}
+                    data-index={index}
+                    onClick={() => {
+                      onSelect(block.type);
+                      onClose();
+                    }}
+                    className={cn(
+                      'w-full px-3 py-2.5 rounded-xl text-left flex items-center gap-3 transition-all duration-150',
+                      isSelected
+                        ? 'bg-koda-purple-ghost'
+                        : 'hover:bg-koda-hover'
+                    )}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0', block.color)}>
+                      <Icon className="w-4.5 h-4.5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={cn('text-sm font-medium', isSelected ? 'text-koda-purple' : 'text-koda-black')}>{block.label}</div>
+                      <div className="text-xs text-koda-gray-light truncate">{block.description}</div>
+                    </div>
+                    {isSelected && (
+                      <motion.div
+                        layoutId="slash-selected"
+                        className="w-1.5 h-1.5 rounded-full bg-koda-purple flex-shrink-0"
+                      />
+                    )}
+                  </motion.button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Footer hint */}
+        <div className="px-4 py-2 border-t border-koda-border-soft bg-koda-purple-ghost/50">
+          <div className="flex items-center justify-between text-[10px] text-koda-gray-light">
+            <span>↑↓ Navegar</span>
+            <span>↵ Seleccionar</span>
+            <span>Esc Cerrar</span>
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
