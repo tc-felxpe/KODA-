@@ -104,91 +104,93 @@ export function SlashCommandMenu({ isOpen, onClose, onSelect }: SlashCommandMenu
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
           onClick={onClose}
         />
-        <motion.div
-          ref={listRef}
-          initial={{ opacity: 0, scale: 0.95, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          className="fixed z-[100] bg-white border border-koda-border-soft rounded-2xl shadow-dropdown max-h-[360px] w-[calc(100vw-2rem)] max-w-[320px] overflow-hidden"
-          style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
-          onKeyDown={handleKeyDown}
-        >
-        {/* Header */}
-        <div className="p-3 border-b border-koda-border-soft">
-          <div className="flex items-center gap-2 px-2">
-            <Sparkles className="w-4 h-4 text-koda-purple" />
-            <input
-              ref={inputRef}
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar bloques..."
-              className="flex-1 text-sm outline-none text-koda-black placeholder-koda-gray-light bg-transparent"
-            />
+        {/* Centering wrapper - ensures modal stays in viewport on mobile */}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none">
+          <motion.div
+            ref={listRef}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            className="pointer-events-auto bg-white border border-koda-border-soft rounded-2xl shadow-dropdown max-h-[60vh] w-full max-w-[320px] overflow-hidden"
+            onKeyDown={handleKeyDown}
+          >
+          {/* Header */}
+          <div className="p-3 border-b border-koda-border-soft">
+            <div className="flex items-center gap-2 px-2">
+              <Sparkles className="w-4 h-4 text-koda-purple" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar bloques..."
+                className="flex-1 text-sm outline-none text-koda-black placeholder-koda-gray-light bg-transparent"
+              />
+            </div>
           </div>
-        </div>
 
-        {/* List */}
-        <div className="overflow-y-auto max-h-[280px] p-1.5">
-          {filteredBlocks.length === 0 ? (
-            <div className="p-6 text-center">
-              <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-koda-purple-ghost flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-koda-purple-light" />
+          {/* List */}
+          <div className="overflow-y-auto max-h-[calc(60vh-80px)] p-1.5">
+            {filteredBlocks.length === 0 ? (
+              <div className="p-6 text-center">
+                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-koda-purple-ghost flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-koda-purple-light" />
+                </div>
+                <p className="text-sm text-koda-gray-purple">No se encontraron bloques</p>
+                <p className="text-xs text-koda-gray-light mt-0.5">Intenta con otra búsqueda</p>
               </div>
-              <p className="text-sm text-koda-gray-purple">No se encontraron bloques</p>
-              <p className="text-xs text-koda-gray-light mt-0.5">Intenta con otra búsqueda</p>
-            </div>
-          ) : (
-            <div className="space-y-0.5">
-              {filteredBlocks.map((block, index) => {
-                const Icon = block.icon;
-                const isSelected = index === selectedIndex;
-                return (
-                  <motion.button
-                    key={block.type}
-                    data-index={index}
-                    onClick={() => {
-                      onSelect(block.type);
-                      onClose();
-                    }}
-                    className={cn(
-                      'w-full px-3 py-2.5 rounded-xl text-left flex items-center gap-3 transition-all duration-150',
-                      isSelected
-                        ? 'bg-koda-purple-ghost'
-                        : 'hover:bg-koda-hover'
-                    )}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0', block.color)}>
-                      <Icon className="w-4.5 h-4.5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className={cn('text-sm font-medium', isSelected ? 'text-koda-purple' : 'text-koda-black')}>{block.label}</div>
-                      <div className="text-xs text-koda-gray-light truncate">{block.description}</div>
-                    </div>
-                    {isSelected && (
-                      <motion.div
-                        layoutId="slash-selected"
-                        className="w-1.5 h-1.5 rounded-full bg-koda-purple flex-shrink-0"
-                      />
-                    )}
-                  </motion.button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Footer hint */}
-        <div className="px-4 py-2 border-t border-koda-border-soft bg-koda-purple-ghost/50">
-          <div className="flex items-center justify-between text-[10px] text-koda-gray-light">
-            <span>↑↓ Navegar</span>
-            <span>↵ Seleccionar</span>
-            <span>Esc Cerrar</span>
+            ) : (
+              <div className="space-y-0.5">
+                {filteredBlocks.map((block, index) => {
+                  const Icon = block.icon;
+                  const isSelected = index === selectedIndex;
+                  return (
+                    <motion.button
+                      key={block.type}
+                      data-index={index}
+                      onClick={() => {
+                        onSelect(block.type);
+                        onClose();
+                      }}
+                      className={cn(
+                        'w-full px-3 py-2.5 rounded-xl text-left flex items-center gap-3 transition-all duration-150',
+                        isSelected
+                          ? 'bg-koda-purple-ghost'
+                          : 'hover:bg-koda-hover'
+                      )}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0', block.color)}>
+                        <Icon className="w-4.5 h-4.5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className={cn('text-sm font-medium', isSelected ? 'text-koda-purple' : 'text-koda-black')}>{block.label}</div>
+                        <div className="text-xs text-koda-gray-light truncate">{block.description}</div>
+                      </div>
+                      {isSelected && (
+                        <motion.div
+                          layoutId="slash-selected"
+                          className="w-1.5 h-1.5 rounded-full bg-koda-purple flex-shrink-0"
+                        />
+                      )}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            )}
           </div>
+
+          {/* Footer hint */}
+          <div className="px-4 py-2 border-t border-koda-border-soft bg-koda-purple-ghost/50">
+            <div className="flex items-center justify-between text-[10px] text-koda-gray-light">
+              <span>↑↓ Navegar</span>
+              <span>↵ Seleccionar</span>
+              <span>Esc Cerrar</span>
+            </div>
+          </div>
+          </motion.div>
         </div>
-        </motion.div>
       </>
     </AnimatePresence>,
     document.body
