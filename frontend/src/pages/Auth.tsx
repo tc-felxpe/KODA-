@@ -90,7 +90,25 @@ export function Auth() {
       </div>
 
       {/* Right side - Form */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-8">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8">
+        {/* Mobile branding - visible only below lg */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="lg:hidden text-center mb-6"
+        >
+          <img
+            src="/img/LOGO-KODA-PRINCIPAL.png"
+            alt="KODA"
+            className="h-12 w-auto mx-auto mb-4"
+          />
+          <h1 className="text-2xl sm:text-3xl font-bold text-koda-black">
+            Organiza tu trabajo<br />
+            <span className="text-koda-purple">de forma inteligente</span>
+          </h1>
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
