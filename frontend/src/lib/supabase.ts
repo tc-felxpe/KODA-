@@ -1,8 +1,10 @@
 /// <reference types="vite/client" />
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Sanitize env vars: remove invisible chars that break HTTP headers
+const sanitize = (s: string) => s.trim().replace(/[\u200B-\u200D\uFEFF\x00-\x1F\x7F]/g, '');
+const supabaseUrl = sanitize(import.meta.env.VITE_SUPABASE_URL || '');
+const supabaseAnonKey = sanitize(import.meta.env.VITE_SUPABASE_ANON_KEY || '');
 
 // DEBUG: Safe preview of env values
 console.log('[KODA DEBUG] URL first/last 10:', supabaseUrl.slice(0, 10) + '...' + supabaseUrl.slice(-10));
