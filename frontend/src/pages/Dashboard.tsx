@@ -144,21 +144,22 @@ export function Dashboard() {
 
       <main className="flex-1 min-w-0 overflow-y-auto">
         {/* Header */}
-        <header className="px-6 md:px-8 pt-6 pb-4">
-          <div className="flex items-start justify-between">
+        <header className="px-4 md:px-8 pt-6 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
             <div>
               <h1 className="text-sm text-gray-500 mb-0.5">Bienvenido de vuelta, {userName}</h1>
               <p className="text-lg font-medium text-gray-800">¡Qué bueno verte de nuevo!</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Button
                 variant="primary"
                 size="sm"
                 leftIcon={<Plus className="w-4 h-4" />}
                 onClick={() => setShowNewWorkspace(true)}
-                className="rounded-xl"
+                className="rounded-xl whitespace-nowrap"
               >
-                Nuevo espacio
+                <span className="hidden sm:inline">Nuevo espacio</span>
+                <span className="sm:hidden">Nuevo</span>
               </Button>
               <button
                 onClick={handleSignOut}
@@ -212,7 +213,7 @@ export function Dashboard() {
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input type="text" placeholder="Buscar espacios..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-100 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-koda-purple/20 focus:border-koda-purple w-56" />
+                        className="pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-100 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-koda-purple/20 focus:border-koda-purple w-full sm:w-56" />
                     </div>
                     <div className="flex items-center bg-gray-50 rounded-lg p-0.5 border border-gray-100">
                       <button onClick={() => setViewMode('grid')} className={cn('p-1.5 rounded-md transition-colors', viewMode === 'grid' ? 'bg-white shadow-sm text-koda-purple' : 'text-gray-400 hover:text-gray-600')}>

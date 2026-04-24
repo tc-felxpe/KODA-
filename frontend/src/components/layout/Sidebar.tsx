@@ -197,7 +197,7 @@ export function Sidebar({ className }: { className?: string }) {
                     e.stopPropagation();
                     setShowWorkspaceMenu(showWorkspaceMenu === workspace.id ? null : workspace.id);
                   }}
-                  className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all"
+                  className="p-1.5 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all"
                 >
                   <MoreHorizontal className="w-3.5 h-3.5" />
                 </button>

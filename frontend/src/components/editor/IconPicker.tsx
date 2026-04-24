@@ -52,7 +52,7 @@ export function IconPicker({ isOpen, onClose, onSelect, currentIcon }: IconPicke
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.15 }}
-            className="fixed z-[100] w-full max-w-sm bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
+            className="fixed z-[100] w-[calc(100vw-2rem)] max-w-sm bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
             style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
           >
             {/* Header */}
@@ -83,7 +83,7 @@ export function IconPicker({ isOpen, onClose, onSelect, currentIcon }: IconPicke
 
             {/* Grid */}
             <div className="px-4 pb-4 max-h-[300px] overflow-y-auto">
-              <div className="grid grid-cols-8 gap-1">
+              <div className="grid grid-cols-6 sm:grid-cols-8 gap-1">
                 {filtered.map((icon) => (
                   <button
                     key={icon}

@@ -343,9 +343,10 @@ export function PageEditor() {
                 size="sm"
                 leftIcon={<Plus className="w-4 h-4" />}
                 onClick={() => handleAddBlock('paragraph')}
-                className="hidden md:flex rounded-lg"
+                className="rounded-lg"
               >
-                Bloque
+                <span className="hidden md:inline">Bloque</span>
+                <span className="md:hidden">+</span>
               </Button>
             </div>
           </div>
