@@ -192,5 +192,6 @@ El proyecto está en desarrollo activo. Algunas características planificadas:
 
 ## Autor
 
-**Andres Felipe Castillo** - [@tc-felxpe](https://github.com/tc-felxpe)
-- [@tc.felxpe](https://www.instagram.com/tc.felxpe?igsh=MWpjMjFmdzV1N29ndg%3D%3D&utm_source=qr)
+**Andres Felipe Castillo** 
+** GitHub ** - [@tc-felxpe](https://github.com/tc-felxpe)
+** Instagram ** - [@tc.felxpe](https://www.instagram.com/tc.felxpe?igsh=MWpjMjFmdzV1N29ndg%3D%3D&utm_source=qr)
